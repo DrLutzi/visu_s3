@@ -3,7 +3,8 @@
 #include <QKeyEvent>
 
 Viewer::Viewer(QWidget *parent) :
-    QGLViewer(parent)
+    QGLViewer(parent),
+    m_manager()
 {}
 
 void Viewer::tp_init()

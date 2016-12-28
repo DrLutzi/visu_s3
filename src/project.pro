@@ -50,13 +50,21 @@ SOURCES += main.cpp \
         viewer.cpp \
         Shader.cpp \
         ShaderProgram.cpp \
-    ShaderProgram_RayTracer.cpp
+    ShaderProgram_RayTracer.cpp \
+    sceneobject.cpp \
+    sceneface.cpp \
+    ray.cpp \
+    scenemanager.cpp
 
 HEADERS  += viewer.h \
         ShaderProgram.h \
         Shader.h \
-        errorsHandler.h \
-    ShaderProgram_RayTracer.h
+        errorsHandler.hpp \
+    ShaderProgram_RayTracer.h \
+    sceneobject.h \
+    sceneface.h \
+    ray.h \
+    scenemanager.h
 
 OTHER_FILES += \
     simpleShader.vert \

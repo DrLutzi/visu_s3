@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <cstdlib>
 #include "ShaderProgram_RayTracer.h"
+#include "scenemanager.h"
 
 /**
  * @brief The Viewer class
@@ -61,6 +62,8 @@ protected:
     GLuint m_ebo_id;
     /// shader prg
     ShaderProgram_RayTracer* m_ShaderProgram;
+
+    SceneManager m_manager;
 };
 
 #endif
