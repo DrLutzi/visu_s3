@@ -1,4 +1,5 @@
 #include "sceneface.h"
+#include <glm/gtc/type_ptr.hpp>
 
 SceneFace::SceneFace(const glm::vec3& p0, const glm::vec3& directionW, const glm::vec3& directionH, float w, float h) :
     SceneObject(),
@@ -37,7 +38,7 @@ bool SceneFace::intersectsRay(const Ray &ray, glm::vec3 &intersectionPoint, floa
         return false;   //< plane is parallel to the ray
 
     //get the distance from the plane
-    distanceIntersect = glm::dot(-m_normal, m_P[0] - ray.origin()) / NdotrD;
+    distanceIntersect = glm::dot(m_normal, m_P[0] - ray.origin()) / NdotrD;
     if(distanceIntersect<=0)
         return false;   //< plane is somewhere behind the ray
 
@@ -55,9 +56,44 @@ bool SceneFace::intersectsRay(const Ray &ray, glm::vec3 &intersectionPoint, floa
 
 }
 
+bool SceneFace::intersectsRay(const Ray &ray, RayHitProperties& properties) const
+{
+    //to do this, first we check if the ray intersects the plane defined by the face,
+    //then we check if the point on the plane is inside the face.
+    //This approach allows us to eliminate every cases where the ray isn't even able to intersect the plane before it does.
+
+    float NdotrD=glm::dot(m_normal, ray.direction());
+    if(std::abs(NdotrD)<=EPSILON)
+        return false;   //< plane is parallel to the ray
+
+    //get the distance from the plane
+    properties.distanceHit = glm::dot(m_normal, m_P[0] - ray.origin()) / NdotrD;
+    if(properties.distanceHit<=0)
+        return false;   //< plane is somewhere behind the ray
+
+    //get the intersection point between the ray and the plane as "pM"
+    properties.positionHit = ray.origin() + ray.direction() * properties.distanceHit;
+
+    properties.idObjectHit = id();
+
+
+    //now we just need to check if this point is inside the rectangle and we're all set.
+    //we will use the dot product of each segment to do the job.
+
+    return( -EPSILON > glm::dot(m_P[1] - m_P[0], properties.positionHit - m_P[1]) &&
+            -EPSILON > glm::dot(m_P[2] - m_P[1], properties.positionHit - m_P[2]) &&
+            -EPSILON > glm::dot(m_P[3] - m_P[2], properties.positionHit - m_P[3]) &&
+            -EPSILON > glm::dot(m_P[0] - m_P[3], properties.positionHit - m_P[0]));
+}
+
 //OpenGL sizes
 
-GLsizeiptr SceneFace::sizeVBO() const
+size_t SceneFace::numberAttributes() const
+{
+    return 4;
+}
+
+GLsizeiptr SceneFace::sizeVBOPosition() const
 {
     return 4 * 3 * sizeof(GL_FLOAT);
 }
@@ -74,7 +110,7 @@ void SceneFace::makeVBOPosition(GLint vboId) const
 {
     glBindBuffer(GL_ARRAY_BUFFER, vboId);
     //just copy the content of P
-    glBufferSubData(GL_ARRAY_BUFFER, m_firstVBO, sizeVBO(), &m_P[0]);
+    glBufferSubData(GL_ARRAY_BUFFER, m_firstVBOPosition, sizeVBOPosition(), &m_P[0]);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -87,5 +123,6 @@ void SceneFace::makeEBO(GLint eboId) const
 
 void SceneFace::draw() const
 {
-    glDrawArrays(GL_QUADS, m_firstVBO, 4);
+    glUniform3fv(ms_uniformColorLocation, 1, &m_color[0]);
+    glDrawArrays(GL_TRIANGLE_FAN, m_firstVBOPosition, 4);
 }

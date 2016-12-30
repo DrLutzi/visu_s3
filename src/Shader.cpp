@@ -25,7 +25,6 @@ Shader::~Shader()
 }
 
 
-
 /**
  * @brief Shader::compileShader
  * @param filename fichier source

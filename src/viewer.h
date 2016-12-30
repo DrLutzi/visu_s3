@@ -7,11 +7,13 @@
 #include <cstdlib>
 #include "ShaderProgram_RayTracer.h"
 #include "scenemanager.h"
+#include <iostream>
+#include "glm/gtx/string_cast.hpp"
 
 /**
  * @brief The Viewer class
- *
- *
+ * makes the relation between the programs, the manager and the view.
+ * inherits QGLViewer.
  */
 class Viewer : public QGLViewer
 {
@@ -53,17 +55,9 @@ protected:
     /// init specific au TP
     void tp_init();
 
-    /// Donnees du TP
-    /// id de VAO
-    GLuint m_Vao;
-    /// id de VBO pour les positions et les lignes des CP
-    GLuint m_vbo_id;
-    /// id de IBO pour desiner les triangles/lignes
-    GLuint m_ebo_id;
-    /// shader prg
-    ShaderProgram_RayTracer* m_ShaderProgram;
+    ShaderProgram_RayTracer* m_shaderProgram;
 
-    SceneManager m_manager;
+    SceneManager *m_manager;
 };
 
 #endif

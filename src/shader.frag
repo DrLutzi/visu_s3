@@ -1,10 +1,11 @@
 #version 330
 
-uniform vec4 fsu_color;
+uniform vec3 u_vColor;
 
-out vec4 color_final;
+out vec4 out_fragColor;
+
 
 void main()
 {
-    color_final = fsu_color;
+     out_fragColor=vec4(u_vColor, 0.0);
 }

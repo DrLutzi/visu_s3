@@ -54,7 +54,9 @@ SOURCES += main.cpp \
     sceneobject.cpp \
     sceneface.cpp \
     ray.cpp \
-    scenemanager.cpp
+    scenemanager.cpp \
+    scenecamera.cpp \
+    dialog_renderedimage.cpp
 
 HEADERS  += viewer.h \
         ShaderProgram.h \
@@ -64,10 +66,16 @@ HEADERS  += viewer.h \
     sceneobject.h \
     sceneface.h \
     ray.h \
-    scenemanager.h
+    scenemanager.h \
+    scenecamera.h \
+    dialog_renderedimage.h
 
 OTHER_FILES += \
-    simpleShader.vert \
-    shaderBezier.frag \
-    shaderBezier.vert \
-    shaderBezier.geom
+    shader.frag \
+    shader.vert \
+    shader.geom \
+    shaderPhong.vert \
+    shaderPhong.frag \
+
+FORMS += \
+    dialog_renderedimage.ui

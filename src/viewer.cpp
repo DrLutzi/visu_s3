@@ -3,8 +3,7 @@
 #include <QKeyEvent>
 
 Viewer::Viewer(QWidget *parent) :
-    QGLViewer(parent),
-    m_manager()
+    QGLViewer(parent)
 {}
 
 void Viewer::tp_init()
@@ -14,38 +13,28 @@ void Viewer::tp_init()
     setMouseTracking(true);
 
     // SHADER
-    m_ShaderProgram = new ShaderProgram_RayTracer();
+    m_shaderProgram = new ShaderProgram_RayTracer();
 
-    //VBO
-    glGenBuffers(1, &m_vbo_id);
+    m_shaderProgram->createVBO();
+    m_shaderProgram->createVAOFromVBO();
 
-    //EBO
-    glGenBuffers(1, &m_ebo_id);
+    m_manager = new SceneManager(*camera(),
+                                 m_shaderProgram->vaoId,
+                                 m_shaderProgram->vboPositionId,
+                                 m_shaderProgram->eboId,
+                                 m_shaderProgram->idOfColor);
 
-    // genere 1 VAO
-    glGenVertexArrays(1, &m_Vao);
+    SceneFace *face1 = new SceneFace(glm::vec3(0,0,0), glm::vec3(1,0,0), glm::vec3(0,1,0), 10, 6);
+    face1->setColor(glm::vec3(0.5, 0.5, 0.8));
 
-    // on travaille sur celui-ci
-    glBindVertexArray(m_Vao);
-
-    //associe l'ebo
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo_id);
-
-    // associe le VBO de position
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo_id);
-    // avec l'attribut position du shader
-    glEnableVertexAttribArray(m_ShaderProgram->idOfVertexAttribute);
-    // en donne les bon parametre (idAttrib, 3 x float / sommets, pas de normalisation,
-    // et 0, 0 : on ne saute rien et on commence au debut)
-    glVertexAttribPointer(m_ShaderProgram->idOfVertexAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    //vao fini
-    glBindVertexArray(0);
+    m_manager->append(face1);
+    m_manager->remakeScene();
 }
 
 Viewer::~Viewer()
 {
-    delete m_ShaderProgram;
+    m_shaderProgram->destroyVAOAndVBO();
+    delete m_shaderProgram;
 }
 
 void Viewer::init()
@@ -79,36 +68,57 @@ void Viewer::draw()
     glm::mat4 viewMatrix = getCurrentModelViewMatrix();
     glm::mat4 projectionMatrix = getCurrentProjectionMatrix();
 
-    if(m_ShaderProgram != NULL)
+    if(m_shaderProgram != NULL)
     {
-        m_ShaderProgram->startUseProgram();
+        m_shaderProgram->startUseProgram();
 
         // envoit les matrices au shader
-        glUniformMatrix4fv(m_ShaderProgram->idOfViewMatrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-        glUniformMatrix4fv(m_ShaderProgram->idOfProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+        glUniformMatrix4fv(m_shaderProgram->idOfViewMatrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+        glUniformMatrix4fv(m_shaderProgram->idOfProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
         // travaille avec le vao defini (et donc les buffers associés)
-        glBindVertexArray(m_Vao);
-
-        glPointSize(4.0); // clair !!
-        glLineWidth(2.0);
+        glBindVertexArray(m_shaderProgram->vaoId);
 
         //draw here
+        m_manager->drawScene();
 
         glBindVertexArray(0);
 
-        m_ShaderProgram->stopUseProgram();
+        m_shaderProgram->stopUseProgram();
     }
 }
 
 void Viewer::keyPressEvent(QKeyEvent *e)
 {
 	updateGL();
+
+    if(e->key()==Qt::Key_A)
+        m_manager->myFirstRendering();
+
 	QGLViewer::keyPressEvent(e);
 }
 
 void Viewer::mousePressEvent(QMouseEvent *e)
 {
+    qglviewer::Vec origin, direction;
+    glm::vec3 hitPoint;
+    float distanceHit;
+    camera()->convertClickToLine(e->pos(), origin, direction);
+
+    Ray r(vecToGlmVec3(origin), vecToGlmVec3(direction));
+    unsigned int intFound=0;
+    for(SceneManager::const_iterator it=m_manager->begin(); it!=m_manager->end(); ++it)
+    {
+        SceneObject *obj=(*it).second;
+        if(obj!=NULL && obj->intersectsRay(r, hitPoint, distanceHit))
+        {
+            std::cout << "Found intersection! " << glm::to_string(hitPoint) << " at distance " << distanceHit << std::endl;
+            ++intFound;
+        }
+    }
+
+    std::cout << "Intersections found: " << intFound << std::endl;
+
     QGLViewer::mousePressEvent(e);
 }
 
