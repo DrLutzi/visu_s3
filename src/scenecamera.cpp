@@ -1,6 +1,63 @@
 #include "scenecamera.h"
 
-SceneCamera::SceneCamera(qglviewer::Camera &camera) :
+#ifndef USE_QGLVIEWER
+
+qglviewer_fake::Camera::Camera() :
+    m_position(0, 0, 10.0f),
+    m_viewDirection(0,0, -1.0f),
+    m_rightVector(1.0f, 0, 0),
+    m_upVector(0, 1.0f, 0)
+{}
+
+int qglviewer_fake::Camera::screenWidth()
+{
+    return 800;
+}
+
+int qglviewer_fake::Camera::screenHeight()
+{
+    return 600;
+}
+
+const glm::vec3& qglviewer_fake::Camera::position()
+{
+    return m_position;
+}
+
+const glm::vec3& qglviewer_fake::Camera::viewDirection()
+{
+    return m_viewDirection;
+}
+
+const glm::vec3& qglviewer_fake::Camera::rightVector()
+{
+    return m_rightVector;
+}
+
+const glm::vec3& qglviewer_fake::Camera::upVector()
+{
+    return m_upVector;
+}
+
+float qglviewer_fake::Camera::zNear()
+{
+    return 0.005;
+}
+
+float qglviewer_fake::Camera::fieldOfView()
+{
+    return M_PI/2.0f;
+}
+
+float qglviewer_fake::Camera::aspectRatio()
+{
+    return 16.0f/9.0f;
+}
+
+#endif
+
+
+SceneCamera::SceneCamera(QGLVIEWER_NAMESPACE::Camera &camera) :
     m_camera        (camera),
     m_renderedImage (NULL)
 {}
@@ -24,7 +81,7 @@ void SceneCamera::setupRendering()
     m_upVector    = vecToGlmVec3(m_camera.upVector());
 
     //project on the zPlane
-    float distanceFromZPlane = (float)m_camera.zClippingCoefficient();
+    float distanceFromZPlane = (float)m_camera.zNear();
     glm::vec3 toZPlaneCenter = m_viewDirection * distanceFromZPlane;
     glm::vec3 zPlaneCenter = m_position + toZPlaneCenter;
 

@@ -1,19 +1,25 @@
 #include "sceneface.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <iostream>
 
-SceneFace::SceneFace(const glm::vec3& p0, const glm::vec3& directionW, const glm::vec3& directionH, float w, float h) :
+SceneFace::SceneFace(const glm::vec3& bottomLeftPos, const glm::vec3& directionW, const glm::vec3& directionH, float w, float h) :
     SceneObject(),
     m_width(w),
     m_height(h)
 {
-    m_P[0]=p0;
+    if(w==0 || h==0)
+        ERROR("SceneFace: forbidden to have faces with width or height equal to 0 \
+(please check your values before face creation)");
+
+    m_P[0]=bottomLeftPos;
     //find another direction as the cross product of normal and direction to get the third axis of the plane
     m_normal=glm::normalize(glm::cross(directionW, directionH));
 
     //check if this direction is a valid vector, if it isn't, then the plane is not completly determined, which we decide to forbid
     if(glm::length(m_normal)<=0)
         ERROR("SceneFace: directions are colinear or their length \
-              is too small (face generation not deterministic)");
+is too small (face generation not deterministic)");
 
     //we can only work with our directions as axis if they are normalized
     m_axisW = glm::normalize(directionW);
@@ -27,63 +33,74 @@ SceneFace::SceneFace(const glm::vec3& p0, const glm::vec3& directionW, const glm
     m_P[3] = m_P[0] + m_axisH*h;
 }
 
-bool SceneFace::intersectsRay(const Ray &ray, glm::vec3 &intersectionPoint, float &distanceIntersect) const
+void SceneFace::intersectsRay(const Ray &ray, RayHitProperties& properties)
 {
     //to do this, first we check if the ray intersects the plane defined by the face,
     //then we check if the point on the plane is inside the face.
     //This approach allows us to eliminate every cases where the ray isn't even able to intersect the plane before it does.
 
     float NdotrD=glm::dot(m_normal, ray.direction());
-    if(std::abs(NdotrD)<=EPSILON)
-        return false;   //< plane is parallel to the ray
+    if(std::abs(NdotrD)>EPSILON)
+    {
+        //< plane not parallel to the ray
+        //get the distance from the plane
 
-    //get the distance from the plane
-    distanceIntersect = glm::dot(m_normal, m_P[0] - ray.origin()) / NdotrD;
-    if(distanceIntersect<=0)
-        return false;   //< plane is somewhere behind the ray
+        float distanceFromPlane = glm::dot(m_normal, m_P[0] - ray.origin()) / NdotrD;
+        if(distanceFromPlane>0 && (!properties.occuredHit || distanceFromPlane < properties.distanceHit))
+        { //< plane intersection is not behind the ray and closer than the previous intersection
 
-    //get the intersection point between the ray and the plane as "pM"
-    intersectionPoint = ray.origin() + ray.direction() * distanceIntersect;
+            //get the intersection point between the ray and the plane as "pM"
+            glm::vec3 pM;
+            pM = ray.origin() + ray.direction() * distanceFromPlane;
 
+            //now we just need to check if this point is inside the rectangle.
+            //we will use the dot product of each segment to do the job.
 
-    //now we just need to check if this point is inside the rectangle and we're all set.
-    //we will use the dot product of each segment to do the job.
-
-    return( -EPSILON > glm::dot(m_P[1] - m_P[0], intersectionPoint - m_P[1]) &&
-            -EPSILON > glm::dot(m_P[2] - m_P[1], intersectionPoint - m_P[2]) &&
-            -EPSILON > glm::dot(m_P[3] - m_P[2], intersectionPoint - m_P[3]) &&
-            -EPSILON > glm::dot(m_P[0] - m_P[3], intersectionPoint - m_P[0]));
-
+            if( -EPSILON > glm::dot(m_P[1] - m_P[0], pM - m_P[1]) &&
+                -EPSILON > glm::dot(m_P[2] - m_P[1], pM - m_P[2]) &&
+                -EPSILON > glm::dot(m_P[3] - m_P[2], pM - m_P[3]) &&
+                -EPSILON > glm::dot(m_P[0] - m_P[3], pM - m_P[0]))
+            {
+                //We found a new intersection better than any previous intersection.
+                properties.occuredHit   = true;
+                properties.objectHit    = this;
+                properties.positionHit  = pM;
+                properties.normalHit    = NdotrD>0 ? -m_normal : m_normal;
+                properties.distanceHit  = distanceFromPlane;
+            }
+        }
+    }
+    return;
 }
 
-bool SceneFace::intersectsRay(const Ray &ray, RayHitProperties& properties) const
+SceneFace::UniformIntegral SceneFace::beginUniformIntegral(size_t N) const
 {
-    //to do this, first we check if the ray intersects the plane defined by the face,
-    //then we check if the point on the plane is inside the face.
-    //This approach allows us to eliminate every cases where the ray isn't even able to intersect the plane before it does.
+    UniformIntegral ui;
+    ui.size=N;
+    ui.actualSize=N*N;
+    ui.index=0;
+    ui.value=m_P[0];
+    return ui;
+}
 
-    float NdotrD=glm::dot(m_normal, ray.direction());
-    if(std::abs(NdotrD)<=EPSILON)
-        return false;   //< plane is parallel to the ray
+void SceneFace::nextUniformIntegral(UniformIntegral& integral) const
+{
+    ++integral.index;
+    unsigned int i=integral.index%integral.size;
+    unsigned int j=integral.index/integral.size;
 
-    //get the distance from the plane
-    properties.distanceHit = glm::dot(m_normal, m_P[0] - ray.origin()) / NdotrD;
-    if(properties.distanceHit<=0)
-        return false;   //< plane is somewhere behind the ray
+    integral.value=(m_P[0] + m_axisW * (float)i / m_width + m_axisH * (float)j / m_height);
 
-    //get the intersection point between the ray and the plane as "pM"
-    properties.positionHit = ray.origin() + ray.direction() * properties.distanceHit;
+#ifdef QT_DEBUG
+    std::cout << "value of integral step is " << glm::to_string(integral.value);
+#endif
+}
 
-    properties.idObjectHit = id();
-
-
-    //now we just need to check if this point is inside the rectangle and we're all set.
-    //we will use the dot product of each segment to do the job.
-
-    return( -EPSILON > glm::dot(m_P[1] - m_P[0], properties.positionHit - m_P[1]) &&
-            -EPSILON > glm::dot(m_P[2] - m_P[1], properties.positionHit - m_P[2]) &&
-            -EPSILON > glm::dot(m_P[3] - m_P[2], properties.positionHit - m_P[3]) &&
-            -EPSILON > glm::dot(m_P[0] - m_P[3], properties.positionHit - m_P[0]));
+SceneFace::UniformIntegral SceneFace::endUniformIntegral(size_t N) const
+{
+    UniformIntegral ui;
+    ui.index=N*N;
+    return ui;
 }
 
 //OpenGL sizes

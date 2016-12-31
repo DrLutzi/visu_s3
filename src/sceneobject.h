@@ -15,32 +15,54 @@ class SceneObject
 {
 public:
 
-    typedef struct
+    class RayHitProperties
     {
-        unsigned int    idObjectHit;
+    public:
+        RayHitProperties() :
+            occuredHit(false)
+        {}
+
+        bool            occuredHit;
+        SceneObject     *objectHit;
         glm::vec3       positionHit;
+        glm::vec3       normalHit;
         float           distanceHit;
-    } RayHitProperties;
+    };
 
     SceneObject();
 
     ///
     /// \brief intersectsRay computes the intersection properties between the ray and this object.
-    /// \param ray the ray (with origin and direction)
-    /// \param intersectionPoint a reference to the point of the first intersection, might be changed even if no intersection was found.
-    /// \param distanceIntersect the distance between the intersected point and the origin of the ray, might be changed even if no intersection was found.
-    /// \return true if the ray intersects the face and isn't parallel to the face, false otherwise.
-    /// Deprecated.
-    ///
-    virtual bool intersectsRay(const Ray &ray, glm::vec3& intersectionPoint, float &distanceIntersect) const=0;
-
-    ///
-    /// \brief intersectsRay computes the intersection properties between the ray and this object.
+    /// The ray properties are persistent through a whole scene iteration, so they only register the closest hit.
     /// \param ray the ray (with origin and direction)
     /// \param hitProperties hit properties of the intersection
     ///
-    virtual bool intersectsRay(const Ray &ray, RayHitProperties& properties) const=0;
+    virtual void intersectsRay(const Ray &ray, RayHitProperties& properties) =0;
 
+    //uniform integral simulation on the surface, iterator style
+
+    class UniformIntegral
+    {
+    public:
+        UniformIntegral():
+            index(0) {}
+        UniformIntegral(const UniformIntegral& other)
+            {value=other.value; index=other.index; size=other.size; actualSize=other.size;}
+        ~UniformIntegral();
+        bool operator==(const UniformIntegral& other)
+            {return index==other.index;}
+        glm::vec3 &operator*()
+            {return value;}
+
+        glm::vec3 value;
+        unsigned int    index;
+        size_t          size;
+        size_t          actualSize;
+    };
+
+    virtual UniformIntegral beginUniformIntegral(size_t N) const=0;
+    virtual void nextUniformIntegral(UniformIntegral& integral) const=0;
+    virtual UniformIntegral endUniformIntegral(size_t N) const=0;
 
     //OpenGL indexes
 

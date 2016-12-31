@@ -18,6 +18,7 @@ void Viewer::tp_init()
     m_shaderProgram->createVBO();
     m_shaderProgram->createVAOFromVBO();
 
+#ifdef USE_QGLVIEWER
     m_manager = new SceneManager(*camera(),
                                  m_shaderProgram->vaoId,
                                  m_shaderProgram->vboPositionId,
@@ -29,6 +30,8 @@ void Viewer::tp_init()
 
     m_manager->append(face1);
     m_manager->remakeScene();
+
+#endif
 }
 
 Viewer::~Viewer()

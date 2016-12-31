@@ -1,6 +1,7 @@
 #include "scenemanager.h"
+#include <algorithm>
 
-SceneManager::SceneManager(qglviewer::Camera &camera, GLint vaoId, GLint vboPositionId, GLint eboId, GLuint colorLocation) :
+SceneManager::SceneManager(QGLVIEWER_NAMESPACE::Camera &camera, GLint vaoId, GLint vboPositionId, GLint eboId, GLuint colorLocation) :
     m_objects(),
     m_camera(camera),
     m_VAOId(vaoId),
@@ -43,6 +44,12 @@ void SceneManager::append(SceneObject* object, bool reallocate)
             object->setBaseVertexEBO(baseVertex);
         }
     }
+}
+
+void SceneManager::append(SceneFace_Light *object, bool reallocate)
+{
+    append((SceneObject *)object, reallocate);
+    m_lightSource = object;
 }
 
 SceneObject *SceneManager::remove(unsigned int id)
@@ -137,23 +144,93 @@ void SceneManager::myFirstRendering()
         for(int y=0; y<h; ++y)
         {
             Ray r=m_camera.castRayFromPixel(x,y);
-            for(const_iterator it=begin(); it!=end(); ++it)
+            SceneObject::RayHitProperties hitProperties;
+            for(iterator it=begin(); it!=end(); ++it)
             {
-                glm::vec3 dummy;
-                float dummyf;
                 SceneObject *object=(*it).second;
-                if(object->intersectsRay(r, dummy, dummyf))
-                {
-                    m_camera.setPixelfv(x, y, (&object->color()));
-                }
-                else
-                {
-                    m_camera.setPixelf(x, y, 0.0f, 0.0f, 0.0f);
-                }
+                object->intersectsRay(r, hitProperties);
+            }
+            if(hitProperties.occuredHit)
+            {
+                m_camera.setPixelfv(x, y, &hitProperties.objectHit->color());
+            }
+            else
+            {
+                m_camera.setPixelf(x, y, 0, 0, 0);
             }
         }
     }
     m_camera.showBeautifulRender();
+}
+
+void SceneManager::phongRendering(size_t N)
+{
+    if(m_lightSource==NULL)
+        ERROR("Why would you try a phong rendering without a light source?");
+    m_camera.setupRendering();
+    int w=m_camera.width();
+    int h=m_camera.height();
+
+    for(int x=0; x<w; ++x)
+    {
+        for(int y=0; y<h; ++y)
+        {
+            //cast ray through the pixel, from the position of the eye
+            Ray r=m_camera.castRayFromPixel(x,y);
+            //try to find the closest hit
+            for(iterator it=begin(); it!=end(); ++it)
+            {
+                SceneObject::RayHitProperties rayHitProperties;
+                for(iterator it=begin(); it!=end(); ++it)
+                {
+                    SceneObject *object=(*it).second;
+                    object->intersectsRay(r, rayHitProperties);
+                }
+                if(rayHitProperties.occuredHit) //we found something?
+                {
+                    //is it a material prop?
+                    SceneFace_Prop *material=dynamic_cast<SceneFace_Prop*>(rayHitProperties.objectHit);
+                    if(material!=NULL)
+                    {
+                        //compute how much of the light's surface the hitPoint can see by integrating its surface.
+                        glm::vec3 finalColor;
+                        SceneFace::UniformIntegral ui(m_lightSource->beginUniformIntegral(N));
+                        for(ui; ui!=m_lightSource->endUniformIntegral(N); m_lightSource->nextUniformIntegral(ui))
+                        {
+                            //grab L and N for elegant writting purposes
+                            glm::vec3 L=glm::normalize(ui.value-rayHitProperties.positionHit);
+                            glm::vec3 N=rayHitProperties.normalHit;
+
+                            //check for obstructions
+                            //also, TODO : we'll probably have to start a bit further following the normal.
+                            Ray toLight(rayHitProperties.positionHit, L);
+                            SceneObject::RayHitProperties secondRayHitProperties;
+                            for(iterator it=begin(); it!=end(); ++it)
+                            {
+                                SceneObject *object=(*it).second;
+                                //we're not interested by hitting the light.
+                                if(object->id() != m_lightSource->id())
+                                    object->intersectsRay(r, secondRayHitProperties);
+                            }
+                            if(!secondRayHitProperties.occuredHit) //no obstruction found?
+                            {//we need to increment the light of this pixel.
+                                float NdotL = glm::dot(L, N);
+                                float diffuseTerm = 0;//std::clamp( NdotL, 0, 1 );
+                            }
+
+                        }
+                    }
+                    else //is it a light source?
+                    {
+                        SceneFace_Light *light=dynamic_cast<SceneFace_Light*>(rayHitProperties.objectHit);
+
+                    }
+                }
+                else
+                    m_camera.setPixelf(x, y, 0, 0, 0);
+            }
+        }
+    }
 }
 
 SceneObject *SceneManager::operator[](unsigned int i)

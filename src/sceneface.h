@@ -12,8 +12,13 @@ class SceneFace : public SceneObject
 public:
     SceneFace(const glm::vec3& p0, const glm::vec3& directionW, const glm::vec3& directionH, float w, float h);
 
-    bool intersectsRay(const Ray& ray, glm::vec3& intersectionPoint, float &distanceIntersect) const;
-    bool intersectsRay(const Ray &ray, RayHitProperties& properties) const;
+    void intersectsRay(const Ray &ray, RayHitProperties& properties);
+
+    //Uniform integration
+
+    UniformIntegral beginUniformIntegral(size_t N) const;
+    void nextUniformIntegral(UniformIntegral& integral) const;
+    UniformIntegral endUniformIntegral(size_t N) const;
 
     //OpenGL sizes
 
@@ -33,7 +38,8 @@ public:
 
 private:
 
-    /// \brief the 4 points of the face
+    /// \brief the positions of the 4 vertices of the face. m_P[0] is bottom left,
+    /// and the positions are set in a counter clockwise fashion.
     glm::vec3 m_P[4];
 
     /// \brief m_normal normal of the face
@@ -69,7 +75,7 @@ public:
         float       fSpecularPower;
     } MaterialProperties_t;
 
-    void setMaterialProperties(const MaterialProperties_t& properties) {m_materialProperties=properties;}
+    inline void setMaterialProperties(const MaterialProperties_t& properties) {m_materialProperties=properties;}
 
 private:
         MaterialProperties_t                m_materialProperties;       //properties of material in the scene
@@ -93,7 +99,7 @@ public:
         glm::vec3   vSpecular;
     } LightProperties_t;
 
-    void setLightProperties(const LightProperties_t& properties) {m_lightProperties=properties;}
+    inline void setLightProperties(const LightProperties_t& properties) {m_lightProperties=properties;}
 
 private :
     LightProperties_t                   m_lightProperties;          //properties of light source in the scene

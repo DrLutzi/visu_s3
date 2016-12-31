@@ -8,7 +8,7 @@
 class SceneManager
 {
 public:
-    SceneManager(qglviewer::Camera &camera, GLint vaoId, GLint vboPositionId, GLint eboId, GLuint colorLocation);
+    SceneManager(QGLVIEWER_NAMESPACE::Camera &camera, GLint vaoId, GLint vboPositionId, GLint eboId, GLuint colorLocation);
 
     typedef std::map<unsigned int, SceneObject*>::iterator iterator;
     typedef std::map<unsigned int, SceneObject*>::const_iterator const_iterator;
@@ -27,6 +27,7 @@ public:
     /// It can be efficient to avoid reallocating when several objects are attached to the manager at once.
     ///
     void append(SceneObject* object, bool reallocate=true);
+    void append(SceneFace_Light *object, bool reallocate=true);
 
     ///
     /// \brief removes a object from the manager and returns it (often for deletion).
@@ -64,10 +65,18 @@ public:
     //Non-OpenGL rendering
 
     ///
-    /// \brief myFirstRendering a debugging rendering, just to see if my calculations (ray intersection, etc) are correct.
-    ///  Fills a pixel white if there is something, black otherwise.
+    /// \brief myFirstRendering
+    ///  a debugging rendering, just to see if my calculations (ray intersection, etc) are correct.
+    ///  Fills a pixel with the face's color if there is something, black otherwise.
     ///
     void myFirstRendering();
+
+    ///
+    /// \brief phongRendering
+    /// uses phong rendering to render each object, with some faces being light sources.
+    /// \param N precision of the lighting
+    ///
+    void phongRendering(size_t N);
 
     //Other functions
 
@@ -81,6 +90,7 @@ public:
 
 private:
 
+    SceneFace_Light *m_lightSource;
     std::map<unsigned int, SceneObject*> m_objects;
 
     SceneCamera                     m_camera;

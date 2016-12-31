@@ -20,8 +20,9 @@ QMAKE_CXXFLAGS += -DSHADERPATH=$$_PRO_FILE_PWD_
 
 # Linux
 unix:!macx {
-	QMAKE_LFLAGS += -Wl,-rpath,$$_PRO_FILE_PWD_/../QGLViewer
-	LIBS += -L$$_PRO_FILE_PWD_/../QGLViewer -lQGLViewer -lGLEW -lGLU
+        #QMAKE_LFLAGS += -Wl,-rpath,$$_PRO_FILE_PWD_/../QGLViewer
+        #LIBS += -L$$_PRO_FILE_PWD_/../QGLViewer -lQGLViewer -lGLEW -lGLU
+        LIBS += -lGLEW -lGLU
 }
 
 # macOS/X
@@ -45,9 +46,8 @@ win32 {
 }
 
 
-
+#SOURCES +=        viewer.cpp \
 SOURCES += main.cpp \
-        viewer.cpp \
         Shader.cpp \
         ShaderProgram.cpp \
     ShaderProgram_RayTracer.cpp \
@@ -58,8 +58,8 @@ SOURCES += main.cpp \
     scenecamera.cpp \
     dialog_renderedimage.cpp
 
-HEADERS  += viewer.h \
-        ShaderProgram.h \
+#HEADERS  += viewer.h \
+HEADERS  += ShaderProgram.h \
         Shader.h \
         errorsHandler.hpp \
     ShaderProgram_RayTracer.h \
