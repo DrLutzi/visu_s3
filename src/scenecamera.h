@@ -3,6 +3,8 @@
 #include <QImage>
 #include <QLabel>
 #include "ray.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <cmath>
 #include "dialog_renderedimage.h"
 #include <glm/gtx/string_cast.hpp>

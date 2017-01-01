@@ -86,14 +86,10 @@ SceneFace::UniformIntegral SceneFace::beginUniformIntegral(size_t N) const
 void SceneFace::nextUniformIntegral(UniformIntegral& integral) const
 {
     ++integral.index;
-    unsigned int i=integral.index%integral.size;
-    unsigned int j=integral.index/integral.size;
+    size_t i=integral.index%integral.size;
+    size_t j=integral.index/integral.size;
 
     integral.value=(m_P[0] + m_axisW * (float)i / m_width + m_axisH * (float)j / m_height);
-
-#ifdef QT_DEBUG
-    std::cout << "value of integral step is " << glm::to_string(integral.value);
-#endif
 }
 
 SceneFace::UniformIntegral SceneFace::endUniformIntegral(size_t N) const
@@ -105,7 +101,7 @@ SceneFace::UniformIntegral SceneFace::endUniformIntegral(size_t N) const
 
 //OpenGL sizes
 
-size_t SceneFace::numberAttributes() const
+GLint SceneFace::numberAttributes() const
 {
     return 4;
 }
@@ -142,4 +138,29 @@ void SceneFace::draw() const
 {
     glUniform3fv(ms_uniformColorLocation, 1, &m_color[0]);
     glDrawArrays(GL_TRIANGLE_FAN, m_firstVBOPosition, 4);
+}
+
+glm::vec3 SceneFace_Prop::colorAmbiant(SceneFace_Light &light)
+{
+    return light.lightProperties().vAmbiant * m_materialProperties.vAmbiant;
+}
+
+glm::vec3 SceneFace_Prop::colorDiffuse(SceneFace_Light &light, glm::vec3& N, glm::vec3& L)
+{
+    // calculation as for Lambertian reflection
+    float NdotL = glm::dot(N , L);
+    float diffuseTerm = std::max(0.0f, NdotL); //0 <= diffuseTerm <= 1
+
+    return light.lightProperties().vDiffuse * diffuseTerm * m_materialProperties.vDiffuse;
+}
+
+glm::vec3 SceneFace_Prop::colorSpecular(SceneFace_Light &light, glm::vec3& N, glm::vec3& L, glm::vec3& vToEye)
+{
+    //get light reflected from the surface
+    glm::vec3 reflectedL = glm::reflect(-L , N);
+
+    float specularTerm = std::pow( std::max(0.0f, glm::dot(reflectedL, vToEye)), m_materialProperties.fSpecularPower );
+    //0 <= specularTerm <= 1
+
+    return m_materialProperties.vSpecular * specularTerm * light.lightProperties().vSpecular;
 }

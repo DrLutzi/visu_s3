@@ -67,7 +67,6 @@ void main(void)
     vec3 V = normalize(vs_vToCamera);
     vec3 N = normalize(vs_vNormal);
 
-
    // get reflectance components
    vec3 Iamb = ambientLighting();
    vec3 Idif = diffuseLighting( N, L );

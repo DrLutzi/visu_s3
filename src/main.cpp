@@ -28,17 +28,17 @@ int main(int argc, char *argv[])
     SceneFace_Prop *face1 = new SceneFace_Prop(glm::vec3(-5.0f,-3.0f,0), glm::vec3(1,0,0), glm::vec3(0,1,0), 10, 6);
     face1->setColor(glm::vec3(0.5, 0.5, 0.8));
 
-    SceneFace_Prop *face2 = new SceneFace_Prop(glm::vec3(7.0f, -1.0f, 5.0f), glm::vec3(-0.5f, 0, -1.0f), glm::vec3(0,1,0), 3, 3);
+    SceneFace_Prop *face2 = new SceneFace_Prop(glm::vec3(7.0f, -1.0f, 2.0f), glm::vec3(-0.5f, 0, -1.0f), glm::vec3(0,1,0), 8, 8);
     face2->setColor(glm::vec3(0.5,0.5,0.5));
 
-    SceneFace_Light *faceLight = new SceneFace_Light(glm::vec3(-5.0f, -1.0f, 5.0f), glm::vec3(0.5f, 0, -1.0f), glm::vec3(0,1,0), 2, 2);
-    faceLight->setColor(glm::vec3(1.0, 0.8, 1.0));
+    SceneFace_Light *faceLight = new SceneFace_Light(glm::vec3(-5.0f, -1.0f, 5.0f), glm::vec3(-0.1f, 0, -1.0f), glm::vec3(0,1,0), 2, 2);
+    faceLight->setColor(glm::vec3(1.0, 1.0, 1.0));
 
     SceneFace_Prop::MaterialProperties_t matProperties;
-    matProperties.fSpecularPower=100;
-    matProperties.vAmbiant=glm::vec3(0.1, 0.2, 0.1);
-    matProperties.vDiffuse=glm::vec3(0.2, 0.8, 0.2);
-    matProperties.vSpecular=glm::vec3(0.7, 0.9, 0.7);
+    matProperties.fSpecularPower=100.0f;
+    matProperties.vAmbiant=glm::vec3(0.1, 0.3, 0.1);
+    matProperties.vDiffuse=glm::vec3(0.1, 0.4, 0.1);
+    matProperties.vSpecular=glm::vec3(0.1, 0.8, 0.1);
 
     SceneFace_Light::LightProperties_t lightProperties;
     lightProperties.vAmbiant=glm::vec3(0.2, 0.2, 0.2);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     manager.append(face2, false);
     manager.append(faceLight, false);
 
-    //manager.myFirstRendering();
+    manager.phongRendering(6);
 
 
 #endif

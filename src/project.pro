@@ -7,7 +7,7 @@
 CONFIG += c++11
 
 QT += core gui opengl xml widgets
-TARGET = tp_ogl_basic
+TARGET = project
 TEMPLATE = app
 TEMPLATE += subdirs
 
@@ -42,33 +42,34 @@ win32 {
 	# copier lib/Release/x64/glew32.lib dans TP_OGL
 	# copier bin/Release/x64/glew32.dll dans TP_OGL/bin
 	# copier GL (de include) dans TP_OGL
-	LIBS += -L$$_PRO_FILE_PWD_/../QGLViewer -L$$_PRO_FILE_PWD_/../ -lQGLViewer -lglew32 -lopengl32
+        #LIBS += -L$$_PRO_FILE_PWD_/../QGLViewer -L$$_PRO_FILE_PWD_/../ -lQGLViewer -lglew32 -lopengl32
+        LIBS += -L$$_PRO_FILE_PWD_/../Glew/lib/Release/x64 -lglew32 -lopengl32
+        INCLUDEPATH += $$_PRO_FILE_PWD_/../Glew/include
 }
-
 
 #SOURCES +=        viewer.cpp \
 SOURCES += main.cpp \
         Shader.cpp \
         ShaderProgram.cpp \
-    ShaderProgram_RayTracer.cpp \
-    sceneobject.cpp \
-    sceneface.cpp \
-    ray.cpp \
-    scenemanager.cpp \
-    scenecamera.cpp \
-    dialog_renderedimage.cpp
+        ShaderProgram_RayTracer.cpp \
+        sceneobject.cpp \
+        sceneface.cpp \
+        ray.cpp \
+        scenemanager.cpp \
+        scenecamera.cpp \
+        dialog_renderedimage.cpp
 
 #HEADERS  += viewer.h \
 HEADERS  += ShaderProgram.h \
-        Shader.h \
-        errorsHandler.hpp \
-    ShaderProgram_RayTracer.h \
-    sceneobject.h \
-    sceneface.h \
-    ray.h \
-    scenemanager.h \
-    scenecamera.h \
-    dialog_renderedimage.h
+            Shader.h \
+            errorsHandler.hpp \
+            ShaderProgram_RayTracer.h \
+            sceneobject.h \
+            sceneface.h \
+            ray.h \
+            scenemanager.h \
+            scenecamera.h \
+            dialog_renderedimage.h
 
 OTHER_FILES += \
     shader.frag \

@@ -2,7 +2,7 @@
 #define SCENEOBJECT_H
 
 #include "ray.h"
-#include "GL/glew.h"
+#include <GL/glew.h>
 
 ///
 /// \brief The SceneObject class is an abstract representation for a scene object
@@ -48,14 +48,16 @@ public:
             index(0) {}
         UniformIntegral(const UniformIntegral& other)
             {value=other.value; index=other.index; size=other.size; actualSize=other.size;}
-        ~UniformIntegral();
+        ~UniformIntegral() {}
         bool operator==(const UniformIntegral& other)
             {return index==other.index;}
+        bool operator!=(const UniformIntegral& other)
+            {return index!=other.index;}
         glm::vec3 &operator*()
             {return value;}
 
         glm::vec3 value;
-        unsigned int    index;
+        size_t          index;
         size_t          size;
         size_t          actualSize;
     };
@@ -81,7 +83,7 @@ public:
     /// \brief numberVBOPosition
     /// \return the number of vertices sent to the VBO
     ///
-    virtual size_t numberAttributes() const=0;
+    virtual GLint numberAttributes() const=0;
 
     ///
     /// \brief sizeVBOPosition

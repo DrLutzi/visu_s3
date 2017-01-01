@@ -22,7 +22,7 @@ public:
 
     //OpenGL sizes
 
-    size_t numberAttributes() const;
+    GLint numberAttributes() const;
 
     GLsizeiptr sizeVBOPosition() const;
     GLsizeiptr sizeEBO() const;
@@ -55,6 +55,8 @@ private:
     float m_height;
 };
 
+class SceneFace_Light;
+
 ///
 /// \brief The SceneFace_Prop class is a representation of a SceneFace with
 ///  phong material properties for advanced rendering.
@@ -75,7 +77,12 @@ public:
         float       fSpecularPower;
     } MaterialProperties_t;
 
-    inline void setMaterialProperties(const MaterialProperties_t& properties) {m_materialProperties=properties;}
+    inline void setMaterialProperties(const MaterialProperties_t& properties)   {m_materialProperties=properties;}
+    inline const MaterialProperties_t& materialProperties()                     {return m_materialProperties;}
+
+    glm::vec3 colorAmbiant(SceneFace_Light &light);
+    glm::vec3 colorDiffuse(SceneFace_Light &light, glm::vec3 &N, glm::vec3 &L);
+    glm::vec3 colorSpecular(SceneFace_Light &light, glm::vec3 &N, glm::vec3 &L, glm::vec3 &vToEye);
 
 private:
         MaterialProperties_t                m_materialProperties;       //properties of material in the scene
@@ -99,7 +106,8 @@ public:
         glm::vec3   vSpecular;
     } LightProperties_t;
 
-    inline void setLightProperties(const LightProperties_t& properties) {m_lightProperties=properties;}
+    inline void setLightProperties(const LightProperties_t& properties)     {m_lightProperties=properties;}
+    inline const LightProperties_t& lightProperties()                       {return m_lightProperties;}
 
 private :
     LightProperties_t                   m_lightProperties;          //properties of light source in the scene

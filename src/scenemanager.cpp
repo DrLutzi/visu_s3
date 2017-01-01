@@ -176,61 +176,78 @@ void SceneManager::phongRendering(size_t N)
         for(int y=0; y<h; ++y)
         {
             //cast ray through the pixel, from the position of the eye
-            Ray r=m_camera.castRayFromPixel(x,y);
+            Ray firstRay=m_camera.castRayFromPixel(x,y);
             //try to find the closest hit
             for(iterator it=begin(); it!=end(); ++it)
             {
-                SceneObject::RayHitProperties rayHitProperties;
+                SceneObject::RayHitProperties firstRayHitProperties;
                 for(iterator it=begin(); it!=end(); ++it)
                 {
                     SceneObject *object=(*it).second;
-                    object->intersectsRay(r, rayHitProperties);
+                    object->intersectsRay(firstRay, firstRayHitProperties);
                 }
-                if(rayHitProperties.occuredHit) //we found something?
+                if(firstRayHitProperties.occuredHit) //we found something?
                 {
+                    glm::vec3 finalColor(0,0,0);
                     //is it a material prop?
-                    SceneFace_Prop *material=dynamic_cast<SceneFace_Prop*>(rayHitProperties.objectHit);
+                    SceneFace_Prop *material=dynamic_cast<SceneFace_Prop*>(firstRayHitProperties.objectHit);
                     if(material!=NULL)
                     {
+
                         //compute how much of the light's surface the hitPoint can see by integrating its surface.
-                        glm::vec3 finalColor;
                         SceneFace::UniformIntegral ui(m_lightSource->beginUniformIntegral(N));
                         for(ui; ui!=m_lightSource->endUniformIntegral(N); m_lightSource->nextUniformIntegral(ui))
                         {
                             //grab L and N for elegant writting purposes
-                            glm::vec3 L=glm::normalize(ui.value-rayHitProperties.positionHit);
-                            glm::vec3 N=rayHitProperties.normalHit;
+                            glm::vec3 L=glm::normalize(ui.value-firstRayHitProperties.positionHit);
+                            glm::vec3 N=firstRayHitProperties.normalHit;
 
                             //check for obstructions
-                            //also, TODO : we'll probably have to start a bit further following the normal.
-                            Ray toLight(rayHitProperties.positionHit, L);
+                            //also, we need to start casting the ray a little bit further to avoid unwanted collisions with self
+                            Ray toLight(firstRayHitProperties.positionHit+L*EPSILON, L);
                             SceneObject::RayHitProperties secondRayHitProperties;
                             for(iterator it=begin(); it!=end(); ++it)
                             {
                                 SceneObject *object=(*it).second;
                                 //we're not interested by hitting the light.
                                 if(object->id() != m_lightSource->id())
-                                    object->intersectsRay(r, secondRayHitProperties);
+                                    object->intersectsRay(toLight, secondRayHitProperties);
                             }
+                            glm::vec3 diffuse, specular;
                             if(!secondRayHitProperties.occuredHit) //no obstruction found?
                             {//we need to increment the light of this pixel.
-                                float NdotL = glm::dot(L, N);
-                                float diffuseTerm = 0;//std::clamp( NdotL, 0, 1 );
+                                diffuse = material->colorDiffuse(*m_lightSource, N, L);
+                                specular = material->colorSpecular(*m_lightSource, N, L,
+                                                                   glm::normalize(firstRay.origin() - firstRayHitProperties.positionHit));
                             }
 
+                            finalColor += glm::clamp(diffuse+specular, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
                         }
+                        //mean of all computed colors
+                        finalColor /= ui.actualSize;
+                        //add ambiant color
+                        glm::vec3 ambiant(material->colorAmbiant(*m_lightSource));
+                        finalColor = glm::clamp(finalColor+ambiant, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
+                        //this is our pixel's color
                     }
                     else //is it a light source?
                     {
-                        SceneFace_Light *light=dynamic_cast<SceneFace_Light*>(rayHitProperties.objectHit);
-
+                        SceneFace_Light *light=dynamic_cast<SceneFace_Light*>(firstRayHitProperties.objectHit);
+                        if(light!=NULL)
+                        {
+                            finalColor = light->lightProperties().vAmbiant
+                                    + light->lightProperties().vDiffuse
+                                    + light->lightProperties().vSpecular;
+                        }
                     }
+                    m_camera.setPixelfv(x, y, &finalColor);
                 }
                 else
                     m_camera.setPixelf(x, y, 0, 0, 0);
             }
         }
     }
+    m_camera.showBeautifulRender();
 }
 
 SceneObject *SceneManager::operator[](unsigned int i)

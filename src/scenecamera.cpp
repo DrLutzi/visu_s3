@@ -41,7 +41,7 @@ const glm::vec3& qglviewer_fake::Camera::upVector()
 
 float qglviewer_fake::Camera::zNear()
 {
-    return 0.005;
+    return 0.005f;
 }
 
 float qglviewer_fake::Camera::fieldOfView()
