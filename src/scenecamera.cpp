@@ -100,8 +100,22 @@ Ray SceneCamera::castRayFromPixel(int x, int y) const
     if(m_renderedImage==NULL)
         ERROR("setupRendering() not called before castRayFromPixel!");
     glm::vec3 R3Pixel = m_topLeftScreen
-            + m_rightVector*((float)x/m_renderedImage->width())*m_screenWidthReal
-            - m_upVector*((float)y/m_renderedImage->height())*m_screenHeightReal;
+            + m_rightVector*(((float)x+0.5f)/m_renderedImage->width())  *   m_screenWidthReal
+            - m_upVector*(((float)y+0.5f)/m_renderedImage->height())    *   m_screenHeightReal;
+
+    return Ray(m_position, glm::normalize(R3Pixel - m_position));
+}
+
+Ray SceneCamera::castStochasticRayFromPixel(int x, int y) const
+{
+    if(m_renderedImage==NULL)
+        ERROR("setupRendering() not called before castStochasticRayFromPixel!");
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> randomGen(0.0f, 1.0f);
+    glm::vec3 R3Pixel = m_topLeftScreen
+            + m_rightVector*(((float)x+randomGen(gen))/m_renderedImage->width())  *   m_screenWidthReal
+            - m_upVector*(((float)y+randomGen(gen))/m_renderedImage->height())    *   m_screenHeightReal;
 
     return Ray(m_position, glm::normalize(R3Pixel - m_position));
 }

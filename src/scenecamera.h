@@ -9,6 +9,7 @@
 #include "dialog_renderedimage.h"
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
+#include <random>
 
 #ifdef USE_QGLVIEWER
 #include <QGLViewer/qglviewer.h>
@@ -61,6 +62,7 @@ public:
     int height() const {return m_renderedImage != NULL ? m_renderedImage->height() : 0;}
 
     Ray castRayFromPixel(int x, int y) const;
+    Ray castStochasticRayFromPixel(int x, int y) const;
 
     void setPixelf(int x, int y, float r, float g, float b);
     void setPixelfv(int x, int y, const glm::vec3* rgb);

@@ -163,7 +163,7 @@ void SceneManager::myFirstRendering()
     m_camera.showBeautifulRender();
 }
 
-void SceneManager::phongRendering(size_t N)
+void SceneManager::phongRendering(size_t quality)
 {
     if(m_lightSource==NULL)
         ERROR("Why would you try a phong rendering without a light source?");
@@ -193,42 +193,8 @@ void SceneManager::phongRendering(size_t N)
                     SceneFace_Prop *material=dynamic_cast<SceneFace_Prop*>(firstRayHitProperties.objectHit);
                     if(material!=NULL)
                     {
-
-                        //compute how much of the light's surface the hitPoint can see by integrating its surface.
-                        SceneFace::UniformIntegral ui(m_lightSource->beginUniformIntegral(N));
-                        for(ui; ui!=m_lightSource->endUniformIntegral(N); m_lightSource->nextUniformIntegral(ui))
-                        {
-                            //grab L and N for elegant writting purposes
-                            glm::vec3 L=glm::normalize(ui.value-firstRayHitProperties.positionHit);
-                            glm::vec3 N=firstRayHitProperties.normalHit;
-
-                            //check for obstructions
-                            //also, we need to start casting the ray a little bit further to avoid unwanted collisions with self
-                            Ray toLight(firstRayHitProperties.positionHit+L*EPSILON, L);
-                            SceneObject::RayHitProperties secondRayHitProperties;
-                            for(iterator it=begin(); it!=end(); ++it)
-                            {
-                                SceneObject *object=(*it).second;
-                                //we're not interested by hitting the light.
-                                if(object->id() != m_lightSource->id())
-                                    object->intersectsRay(toLight, secondRayHitProperties);
-                            }
-                            glm::vec3 diffuse, specular;
-                            if(!secondRayHitProperties.occuredHit) //no obstruction found?
-                            {//we need to increment the light of this pixel.
-                                diffuse = material->colorDiffuse(*m_lightSource, N, L);
-                                specular = material->colorSpecular(*m_lightSource, N, L,
-                                                                   glm::normalize(firstRay.origin() - firstRayHitProperties.positionHit));
-                            }
-
-                            finalColor += glm::clamp(diffuse+specular, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
-                        }
-                        //mean of all computed colors
-                        finalColor /= ui.actualSize;
-                        //add ambiant color
-                        glm::vec3 ambiant(material->colorAmbiant(*m_lightSource));
-                        finalColor = glm::clamp(finalColor+ambiant, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
-                        //this is our pixel's color
+                        finalColor = lightenMaterialProp(material, firstRayHitProperties.positionHit, firstRayHitProperties.normalHit,
+                                                         glm::normalize(firstRay.origin() - firstRayHitProperties.positionHit), quality);
                     }
                     else //is it a light source?
                     {
@@ -284,3 +250,55 @@ void SceneManager::allocateEBO()
     m_EBOCapacity=m_EBOSize;
 }
 
+//render functions
+
+glm::vec3 SceneManager::lightenMaterialProp(SceneFace_Prop *face, const glm::vec3& positionFace,
+                                            const glm::vec3& normalFace, const glm::vec3 vToEye,
+                                            size_t quality)
+{
+    //compute how much of the light's surface the hitPoint can see by integrating its surface.
+    glm::vec3 finalColor;
+
+    for(const_iterator itLight=begin(); itLight!=end(); ++itLight)
+    {
+        SceneFace_Light *lightSource=dynamic_cast<SceneFace_Light*>((*itLight).second);
+        if(lightSource!=NULL)
+        {
+            glm::vec3 singleFaceLightColor;
+            SceneFace::UniformIntegral ui(lightSource->beginUniformIntegral(quality));
+            for(ui; ui!=lightSource->endUniformIntegral(quality); lightSource->nextUniformIntegral(ui))
+            {
+                //grab L and N for elegant writting purposes
+                glm::vec3 L=glm::normalize(ui.value-positionFace);
+                glm::vec3 N=normalFace;
+
+                //check for obstructions
+                //also, we need to start casting the ray a little bit further to avoid unwanted collisions with self
+                Ray toLight(positionFace+L*EPSILON, L);
+                SceneObject::RayHitProperties secondRayHitProperties;
+                for(iterator it=begin(); it!=end(); ++it)
+                {
+                    SceneObject *object=(*it).second;
+                    //we're not interested by hitting the light.
+                    if(object->id() != lightSource->id())
+                        object->intersectsRay(toLight, secondRayHitProperties);
+                }
+                glm::vec3 diffuse, specular;
+                if(!secondRayHitProperties.occuredHit) //no obstruction found?
+                {//we need to increment the light of this pixel.
+                    diffuse = face->colorDiffuse(*lightSource, N, L);
+                    specular = face->colorSpecular(*lightSource, N, L, vToEye);
+                }
+                singleFaceLightColor += glm::clamp(diffuse+specular, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
+            }
+            //mean of all computed colors
+            singleFaceLightColor /= ui.actualSize;
+            //add ambiant color
+            glm::vec3 ambiant(face->colorAmbiant(*m_lightSource));
+            finalColor += singleFaceLightColor+ambiant;
+            //this is our single light source color
+        }
+    }
+    //clamp to keep the colors between 0 and 1
+    return glm::clamp(finalColor, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
+}

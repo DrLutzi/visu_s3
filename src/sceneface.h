@@ -78,11 +78,11 @@ public:
     } MaterialProperties_t;
 
     inline void setMaterialProperties(const MaterialProperties_t& properties)   {m_materialProperties=properties;}
-    inline const MaterialProperties_t& materialProperties()                     {return m_materialProperties;}
+    inline const MaterialProperties_t& materialProperties() const               {return m_materialProperties;}
 
-    glm::vec3 colorAmbiant(SceneFace_Light &light);
-    glm::vec3 colorDiffuse(SceneFace_Light &light, glm::vec3 &N, glm::vec3 &L);
-    glm::vec3 colorSpecular(SceneFace_Light &light, glm::vec3 &N, glm::vec3 &L, glm::vec3 &vToEye);
+    glm::vec3 colorAmbiant(const SceneFace_Light &light) const;
+    glm::vec3 colorDiffuse(const SceneFace_Light &light, const glm::vec3 &N, const glm::vec3 &L) const;
+    glm::vec3 colorSpecular(const SceneFace_Light &light, const glm::vec3 &N, const glm::vec3 &L, const glm::vec3 &vToEye) const;
 
 private:
         MaterialProperties_t                m_materialProperties;       //properties of material in the scene
@@ -107,7 +107,7 @@ public:
     } LightProperties_t;
 
     inline void setLightProperties(const LightProperties_t& properties)     {m_lightProperties=properties;}
-    inline const LightProperties_t& lightProperties()                       {return m_lightProperties;}
+    inline const LightProperties_t& lightProperties() const                 {return m_lightProperties;}
 
 private :
     LightProperties_t                   m_lightProperties;          //properties of light source in the scene

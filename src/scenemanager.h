@@ -74,7 +74,7 @@ public:
     ///
     /// \brief phongRendering
     /// uses phong rendering to render each object, with some faces being light sources.
-    /// \param N precision of the lighting
+    /// \param N precision of the shadowing
     ///
     void phongRendering(size_t N);
 
@@ -89,6 +89,9 @@ public:
     void allocateEBO();
 
 private:
+
+    //render functions
+    glm::vec3 lightenMaterialProp(SceneFace_Prop *face, const glm::vec3& positionFace, const glm::vec3 &normalFace, const glm::vec3 vToEye, size_t quality);
 
     SceneFace_Light *m_lightSource;
     std::map<unsigned int, SceneObject*> m_objects;

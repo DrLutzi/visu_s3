@@ -140,12 +140,12 @@ void SceneFace::draw() const
     glDrawArrays(GL_TRIANGLE_FAN, m_firstVBOPosition, 4);
 }
 
-glm::vec3 SceneFace_Prop::colorAmbiant(SceneFace_Light &light)
+glm::vec3 SceneFace_Prop::colorAmbiant(const SceneFace_Light &light) const
 {
     return light.lightProperties().vAmbiant * m_materialProperties.vAmbiant;
 }
 
-glm::vec3 SceneFace_Prop::colorDiffuse(SceneFace_Light &light, glm::vec3& N, glm::vec3& L)
+glm::vec3 SceneFace_Prop::colorDiffuse(const SceneFace_Light &light, const glm::vec3 &N, const glm::vec3 &L) const
 {
     // calculation as for Lambertian reflection
     float NdotL = glm::dot(N , L);
@@ -154,7 +154,7 @@ glm::vec3 SceneFace_Prop::colorDiffuse(SceneFace_Light &light, glm::vec3& N, glm
     return light.lightProperties().vDiffuse * diffuseTerm * m_materialProperties.vDiffuse;
 }
 
-glm::vec3 SceneFace_Prop::colorSpecular(SceneFace_Light &light, glm::vec3& N, glm::vec3& L, glm::vec3& vToEye)
+glm::vec3 SceneFace_Prop::colorSpecular(const SceneFace_Light &light, const glm::vec3 &N, const glm::vec3 &L, const glm::vec3 &vToEye) const
 {
     //get light reflected from the surface
     glm::vec3 reflectedL = glm::reflect(-L , N);
