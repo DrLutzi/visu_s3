@@ -75,6 +75,7 @@ public:
         glm::vec3   vDiffuse;
         glm::vec3   vSpecular;
         float       fSpecularPower;
+        float       fReflectionPower;
     } MaterialProperties_t;
 
     inline void setMaterialProperties(const MaterialProperties_t& properties)   {m_materialProperties=properties;}

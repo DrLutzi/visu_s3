@@ -28,8 +28,8 @@ int main(int argc, char *argv[])
 
     manager.setup();
 
-    manager.phongRendering(6);
-
+    //manager.myFirstRendering();
+    manager.mainRendering(10, SceneObject::Integral::UNIFORM_RANDOM, M_PI/8.0f, 5);
 
 #endif
 

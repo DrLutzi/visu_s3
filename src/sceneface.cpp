@@ -112,12 +112,12 @@ void SceneFace::nextIntegral(Integral& integral) const
     {
     case Integral::UNIFORM:
     {
-        ++integral.index;
         size_t i=integral.index%integral.size;
         size_t j=integral.index/integral.size;
 
         //move to the left (or up if on the edge)
-        integral.value=(m_P[0] + m_axisW * (float)i / m_width + m_axisH * (float)j / m_height);
+        integral.value=(m_P[0]  + m_axisW * ((float)i / (integral.size-1)) * m_width
+                                + m_axisH * ((float)j / (integral.size-1)) * m_height);
         break;
     }
     case Integral::UNIFORM_RANDOM:

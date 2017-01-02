@@ -86,7 +86,8 @@ public:
     /// \param quality precision of the shadowing
     /// \param N N*N stochastic tracing (use 0 if you don't want to use stochastic ray tracing)
     ///
-    void phongRendering(size_t quality, SceneObject::Integral::Type_t typeIntegral=SceneObject::Integral::SINGLE_MEAN);
+    void mainRendering(size_t quality=0, SceneObject::Integral::Type_t typeIntegral=SceneObject::Integral::SINGLE_MEAN,
+                        float reflectionAngle=M_PI, unsigned int reflectionQuality=0);
 
     //Other functions
 
@@ -103,6 +104,11 @@ private:
     //render functions
     glm::vec3 lightenMaterialProp(SceneFace_Prop *face, const glm::vec3& positionFace, const glm::vec3 &normalFace,
                                   const glm::vec3 vToEye, size_t quality, SceneObject::Integral::Type_t type=SceneObject::Integral::SINGLE_MEAN);
+
+    glm::vec3 reflectionMaterialProp(SceneFace_Prop *face, const glm::vec3& positionFace,
+                                    const glm::vec3& normalFace, const glm::vec3 vToEye,
+                                    size_t quality, SceneObject::Integral::Type_t typeIntegral,
+                                    float angleReflection, unsigned int reflectionQuality);
 
     std::map<unsigned int, SceneObject*> m_objects;
 

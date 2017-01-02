@@ -45,32 +45,44 @@ void SceneManager::setup()
     SceneFace_Prop *face1 = new SceneFace_Prop(glm::vec3(-5.0f,-3.0f,0), glm::vec3(1,0,0), glm::vec3(0,1,0), 10, 7);
     face1->setColor(glm::vec3(0.1, 0.4, 0.1));
 
-    //a sort of dark green with average specular power
+    //a sort of dark green with average specular power and full opacity.
     matProperties.fSpecularPower=30.0f;
     matProperties.vAmbiant=glm::vec3(0.1, 0.3, 0.1);
     matProperties.vDiffuse=glm::vec3(0.2, 0.4, 0.2);
     matProperties.vSpecular=glm::vec3(0.2, 0.8, 0.2);
+    matProperties.fReflectionPower = 0;
     face1->setMaterialProperties(matProperties);
 
-    SceneFace_Prop *face2 = new SceneFace_Prop(glm::vec3(8.0f, -1.0f, 4.0f), glm::vec3(-0.5f, 0, -1.0f), glm::vec3(0,1,0), 12, 12);
+    SceneFace_Prop *face2 = new SceneFace_Prop(glm::vec3(9.0f, -1.0f, 4.0f), glm::vec3(-0.5f, 0, -1.0f), glm::vec3(0,1,0), 13, 13);
     face2->setColor(glm::vec3(0.2,0.2,0.6));
 
-    //some nice blue with high specular power
+    //some nice blue with high specular power, and a bit of reflection
     matProperties.fSpecularPower=100.0f;
     matProperties.vAmbiant=glm::vec3(0.1, 0.1, 0.3);
     matProperties.vDiffuse=glm::vec3(0.2, 0.2, 0.6);
     matProperties.vSpecular=glm::vec3(0.3, 0.3, 0.8);
+    matProperties.fReflectionPower = 0.1;
     face2->setMaterialProperties(matProperties);
 
     SceneFace_Prop *face3 = new SceneFace_Prop(glm::vec3(-5.0f, -3.0f, 10.0f), glm::vec3(1.0f, 0, 0), glm::vec3(0,0,-1.0f), 10, 10);
     face3->setColor(glm::vec3(0.5, 0.5, 0.5));
-    //A bright grey with low specular power
+    //A bright grey with low specular power, and a great reflection
     matProperties.fSpecularPower=10.0f;
     matProperties.vAmbiant=glm::vec3(0.2, 0.2, 0.2);
     matProperties.vDiffuse=glm::vec3(0.5, 0.5, 0.5);
     matProperties.vSpecular=glm::vec3(0.8, 0.8, 0.8);
+    matProperties.fReflectionPower = 0.8;
     face3->setMaterialProperties(matProperties);
 
+    SceneFace_Prop *face4 = new SceneFace_Prop(glm::vec3(0.0f, 1.5f, 4.0f), glm::vec3(1.0f, 0.2f, -0.5f), glm::vec3(-1.0f,0.8f,-0.5f), 1, 1);
+    face4->setColor(glm::vec3(0.5, 0.5, 0.2));
+    //A small yellow face with very high specular power, some reflection power
+    matProperties.fSpecularPower=300.0f;
+    matProperties.vAmbiant=glm::vec3(0.2, 0.2, 0.1);
+    matProperties.vDiffuse=glm::vec3(0.5, 0.5, 0.2);
+    matProperties.vSpecular=glm::vec3(0.8, 0.8, 0.2);
+    matProperties.fReflectionPower = 0.4;
+    face4->setMaterialProperties(matProperties);
 
     SceneFace_Light *faceLight = new SceneFace_Light(glm::vec3(-5.0f, -1.0f, 5.0f), glm::vec3(-0.1f, 0, -1.0f), glm::vec3(0,1,0), 2, 2);
     faceLight->setColor(glm::vec3(1.0, 1.0, 1.0));
@@ -95,6 +107,7 @@ void SceneManager::setup()
     append(face1, false);
     append(face2, false);
     append(face3, false);
+    append(face4, false);
     append(faceLight, false);
     append(faceLight2, false);
 }
@@ -244,7 +257,7 @@ void SceneManager::myFirstRendering()
     m_camera.showBeautifulRender();
 }
 
-void SceneManager::phongRendering(size_t quality, SceneObject::Integral::Type_t typeIntegral)
+void SceneManager::mainRendering(size_t quality, SceneObject::Integral::Type_t typeIntegral, float reflectionAngle, unsigned int reflectionQuality)
 {
     m_camera.setupRendering();
     int w=m_camera.width();
@@ -265,25 +278,33 @@ void SceneManager::phongRendering(size_t quality, SceneObject::Integral::Type_t 
             }
             if(firstRayHitProperties.occuredHit) //we found something?
             {
-                glm::vec3 finalColor_ray(0,0,0);
                 //is it a material prop?
                 SceneFace_Prop *material=dynamic_cast<SceneFace_Prop*>(firstRayHitProperties.objectHit);
                 if(material!=NULL)
                 {
-                    finalColor_ray = lightenMaterialProp(material, firstRayHitProperties.positionHit,
-                                                         firstRayHitProperties.normalHit,
-                                                         glm::normalize(firstRay.origin() - firstRayHitProperties.positionHit),
-                                                         quality, typeIntegral);
+                    //compute vector to camera
+                    glm::vec3 vToEye = glm::normalize(firstRay.origin() - firstRayHitProperties.positionHit);
+                    //compute material color...
+                    finalColor = lightenMaterialProp(material, firstRayHitProperties.positionHit,
+                                                     firstRayHitProperties.normalHit,
+                                                     vToEye, quality, typeIntegral);
+                    //multiply by its opacity, if this is a thing
+                    if(reflectionQuality > 0)
+                        finalColor *= (1.0f - material->materialProperties().fReflectionPower);
+                    //...and add its reflection color
+                    //you'll note the "final rush" functions arguments that could easily be packed inside a convenient structure. Sorry about that.
+                    finalColor += reflectionMaterialProp(material, firstRayHitProperties.positionHit,
+                                                            firstRayHitProperties.normalHit, vToEye,
+                                                        quality, typeIntegral, reflectionAngle, reflectionQuality);
                 }
                 else //is it a light source?
                 {
                     SceneFace_Light *light=dynamic_cast<SceneFace_Light*>(firstRayHitProperties.objectHit);
                     if(light!=NULL)
-                        finalColor_ray = glm::clamp(light->lightProperties().vAmbiant + light->lightProperties().vDiffuse + light->lightProperties().vSpecular,
+                        finalColor = glm::clamp(light->lightProperties().vAmbiant + light->lightProperties().vDiffuse + light->lightProperties().vSpecular,
                                                         glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
                 }
                 //else this isn't a suitable object for this rendering, black
-                finalColor+=finalColor_ray;
             }
             m_camera.setPixelfv(x, y, &finalColor);
         }
@@ -333,8 +354,9 @@ glm::vec3 SceneManager::lightenMaterialProp(SceneFace_Prop *face, const glm::vec
                                             size_t quality, SceneObject::Integral::Type_t typeIntegral)
 {
     //compute how much of the light's surface the hitPoint can see by integrating its surface.
-    glm::vec3 finalColor;
+    glm::vec3 finalColor(0,0,0);
 
+    if(face->materialProperties().fReflectionPower < (1.0f-EPSILON) ) {
     for(const_iterator itLight=begin(); itLight!=end(); ++itLight)
     {
         SceneFace_Light *lightSource=dynamic_cast<SceneFace_Light*>((*itLight).second);
@@ -350,7 +372,7 @@ glm::vec3 SceneManager::lightenMaterialProp(SceneFace_Prop *face, const glm::vec
 
                 //check for obstructions
                 //also, we need to start casting the ray a little bit further to avoid unwanted collisions with self
-                Ray toLight(positionFace+L*EPSILON, L);
+                Ray toLight(positionFace+N*EPSILON, L);
                 SceneObject::RayHitProperties secondRayHitProperties;
                 for(iterator it=begin(); it!=end(); ++it)
                 {
@@ -365,15 +387,53 @@ glm::vec3 SceneManager::lightenMaterialProp(SceneFace_Prop *face, const glm::vec
                     diffuse = face->colorDiffuse(*lightSource, N, L);
                     specular = face->colorSpecular(*lightSource, N, L, vToEye);
                 }
-                singleFaceLightColor += glm::clamp(diffuse+specular, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
+                singleFaceLightColor += diffuse+specular;
             }
             //mean of all computed colors
             singleFaceLightColor /= ui.actualSize;
             //add ambiant color
             glm::vec3 ambiant(face->colorAmbiant(*lightSource));
-            finalColor += glm::clamp(singleFaceLightColor+ambiant, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
+            finalColor += singleFaceLightColor+ambiant;
             //this is our single light source color
         }
     }
+    }
     return glm::clamp(finalColor, glm::vec3(0,0,0), glm::vec3(1.0f, 1.0f, 1.0f));
+}
+
+glm::vec3 SceneManager::reflectionMaterialProp(SceneFace_Prop *face, const glm::vec3& positionFace,
+                                            const glm::vec3& normalFace, const glm::vec3 vToEye,
+                                            size_t quality, SceneObject::Integral::Type_t typeIntegral,
+                                            float angleReflection, unsigned int reflectionQuality)
+{
+    glm::vec3 finalColor(0,0,0);
+    if(face->materialProperties().fReflectionPower > EPSILON)
+    {
+        //create the cone of reflexion
+        Ray::RandomCone cone;
+        cone.direction = glm::reflect(-vToEye, normalFace);
+        cone.angle = angleReflection;
+
+        for(unsigned int i=0; i<reflectionQuality; ++i)
+        {
+            //r will have an updated ray every call
+            Ray r(positionFace + normalFace*EPSILON, cone);
+            SceneObject::RayHitProperties rayHit;
+            for(iterator it=begin(); it!=end(); ++it)
+            {
+                SceneObject *object=(*it).second;
+                object->intersectsRay(r, rayHit);
+            }
+            //should this ever happen, We're really not interested into reflecting ourselves.
+            if(rayHit.occuredHit && rayHit.objectHit!=face)
+            {
+                finalColor+=face->materialProperties().fReflectionPower *
+                        (1.0f - face->materialProperties().fReflectionPower) *
+                        lightenMaterialProp(face, rayHit.positionHit,
+                                            rayHit.normalHit, -r.direction(),
+                                            quality, typeIntegral);
+            }
+        }
+    }
+    return reflectionQuality > 1 ? finalColor/((float)reflectionQuality) : finalColor;
 }

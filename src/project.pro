@@ -4,6 +4,7 @@
 #
 #--------------------------
 
+QMAKE_CXXFLAGS += -std=c++11
 CONFIG += c++11
 
 QT += core gui opengl xml widgets
@@ -20,9 +21,9 @@ QMAKE_CXXFLAGS += -DSHADERPATH=$$_PRO_FILE_PWD_
 
 # Linux
 unix:!macx {
-        QMAKE_LFLAGS += -Wl,-rpath,$$_PRO_FILE_PWD_/../QGLViewer
-        LIBS += -L$$_PRO_FILE_PWD_/../QGLViewer -lQGLViewer -lGLEW -lGLU
-        #LIBS += -lGLEW -lGLU
+        #QMAKE_LFLAGS += -Wl,-rpath,$$_PRO_FILE_PWD_/../QGLViewer
+        #LIBS += -L$$_PRO_FILE_PWD_/../QGLViewer -lQGLViewer -lGLEW -lGLU
+        LIBS += -lGLEW -lGLU
 }
 
 # macOS/X
@@ -47,7 +48,7 @@ win32 {
         INCLUDEPATH += $$_PRO_FILE_PWD_/../Glew/include
 }
 
-SOURCES +=        viewer.cpp
+#SOURCES +=        viewer.cpp
 SOURCES += main.cpp \
         Shader.cpp \
         ShaderProgram.cpp \
@@ -59,7 +60,7 @@ SOURCES += main.cpp \
         scenecamera.cpp \
         dialog_renderedimage.cpp
 
-HEADERS  += viewer.h
+#HEADERS  += viewer.h
 HEADERS  += ShaderProgram.h \
             Shader.h \
             errorsHandler.hpp \
@@ -75,8 +76,6 @@ OTHER_FILES += \
     shader.frag \
     shader.vert \
     shader.geom \
-    shaderPhong.vert \
-    shaderPhong.frag \
 
 FORMS += \
     dialog_renderedimage.ui

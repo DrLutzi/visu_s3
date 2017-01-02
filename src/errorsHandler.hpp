@@ -1,8 +1,6 @@
 #ifndef ERRORSHANDLER_HPP
 #define ERRORSHANDLER_HPP
 
-#define USE_QGLVIEWER
-
 #include <QtGlobal>
 #include <random>
 
