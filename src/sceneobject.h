@@ -41,30 +41,34 @@ public:
 
     //uniform integral simulation on the surface, iterator style
 
-    class UniformIntegral
+    class Integral
     {
     public:
-        UniformIntegral():
+
+        typedef enum {SINGLE_MEAN, UNIFORM, UNIFORM_RANDOM} Type_t;
+
+        Integral():
             index(0) {}
-        UniformIntegral(const UniformIntegral& other)
+        Integral(const Integral& other)
             {value=other.value; index=other.index; size=other.size; actualSize=other.size;}
-        ~UniformIntegral() {}
-        bool operator==(const UniformIntegral& other)
+        ~Integral() {}
+        bool operator==(const Integral& other)
             {return index==other.index;}
-        bool operator!=(const UniformIntegral& other)
+        bool operator!=(const Integral& other)
             {return index!=other.index;}
         glm::vec3 &operator*()
             {return value;}
 
-        glm::vec3 value;
+        Type_t          type;
+        glm::vec3       value;
         size_t          index;
         size_t          size;
         size_t          actualSize;
     };
 
-    virtual UniformIntegral beginUniformIntegral(size_t N) const=0;
-    virtual void nextUniformIntegral(UniformIntegral& integral) const=0;
-    virtual UniformIntegral endUniformIntegral(size_t N) const=0;
+    virtual Integral beginIntegral(size_t N=0, Integral::Type_t type=Integral::SINGLE_MEAN) const=0;
+    virtual void nextIntegral(Integral& integral) const=0;
+    virtual Integral endIntegral(size_t N=0, Integral::Type_t type=Integral::SINGLE_MEAN) const=0;
 
     //OpenGL indexes
 

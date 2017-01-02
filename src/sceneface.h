@@ -16,9 +16,9 @@ public:
 
     //Uniform integration
 
-    UniformIntegral beginUniformIntegral(size_t N) const;
-    void nextUniformIntegral(UniformIntegral& integral) const;
-    UniformIntegral endUniformIntegral(size_t N) const;
+    Integral beginIntegral(size_t N=0, Integral::Type_t type=Integral::SINGLE_MEAN) const;
+    void nextIntegral(Integral& integral) const;
+    Integral endIntegral(size_t N=0, Integral::Type_t type=Integral::SINGLE_MEAN) const;
 
     //OpenGL sizes
 

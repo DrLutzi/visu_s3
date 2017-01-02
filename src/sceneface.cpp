@@ -73,29 +73,82 @@ void SceneFace::intersectsRay(const Ray &ray, RayHitProperties& properties)
     return;
 }
 
-SceneFace::UniformIntegral SceneFace::beginUniformIntegral(size_t N) const
+SceneFace::Integral SceneFace::beginIntegral(size_t N, Integral::Type_t type) const
 {
-    UniformIntegral ui;
-    ui.size=N;
-    ui.actualSize=N*N;
+    Integral ui;
+    ui.type = type;
     ui.index=0;
-    ui.value=m_P[0];
+
+    switch(ui.type)
+    {
+    case Integral::UNIFORM:
+        ui.size=N;
+        ui.actualSize=N*N;
+        ui.index=0;
+        //start at bottom left
+        ui.value=m_P[0];
+        break;
+
+    case Integral::UNIFORM_RANDOM:
+        ui.size=N;
+        ui.actualSize=N*N;
+        ui.value=(m_P[0]+m_P[1]+m_P[2]+m_P[3])/4.0f;
+        break;
+
+    default: //single_mean or invalid
+        ui.size=1;
+        ui.actualSize=1;
+        ui.value=(m_P[0]+m_P[1]+m_P[2]+m_P[3])/4.0f;
+    }
+
     return ui;
 }
 
-void SceneFace::nextUniformIntegral(UniformIntegral& integral) const
+void SceneFace::nextIntegral(Integral& integral) const
 {
     ++integral.index;
-    size_t i=integral.index%integral.size;
-    size_t j=integral.index/integral.size;
 
-    integral.value=(m_P[0] + m_axisW * (float)i / m_width + m_axisH * (float)j / m_height);
+    switch(integral.type)
+    {
+    case Integral::UNIFORM:
+    {
+        ++integral.index;
+        size_t i=integral.index%integral.size;
+        size_t j=integral.index/integral.size;
+
+        //move to the left (or up if on the edge)
+        integral.value=(m_P[0] + m_axisW * (float)i / m_width + m_axisH * (float)j / m_height);
+        break;
+    }
+    case Integral::UNIFORM_RANDOM:
+    {
+        std::uniform_real_distribution<float> randomGen(0.0f, 1.0f);
+        integral.value=m_P[0] + m_axisW * randomGen(Random::genMt19937) / m_width + m_axisH * randomGen(Random::genMt19937) / m_height;
+        break;
+    }
+    default: //single_mean or invalid
+        ;
+    }
 }
 
-SceneFace::UniformIntegral SceneFace::endUniformIntegral(size_t N) const
+SceneFace::Integral SceneFace::endIntegral(size_t N, Integral::Type_t type) const
 {
-    UniformIntegral ui;
-    ui.index=N*N;
+    Integral ui;
+
+    switch(type)
+    {
+    case Integral::UNIFORM:
+        ui.index=N*N;
+        break;
+
+    case Integral::UNIFORM_RANDOM:
+        ui.index=N*N;
+        break;
+
+    default: //single_mean or invalid
+        ui.index=1;
+    }
+
     return ui;
 }
 
@@ -113,8 +166,7 @@ GLsizeiptr SceneFace::sizeVBOPosition() const
 
 GLsizeiptr SceneFace::sizeEBO() const
 {
-    //0, we don't need an EBO here.
-    return 0;
+    return 4 * sizeof(unsigned int);
 }
 
 //OpenGL fill given VBO and EBO segment
@@ -129,7 +181,12 @@ void SceneFace::makeVBOPosition(GLint vboId) const
 
 void SceneFace::makeEBO(GLint eboId) const
 {
-    //nothing. We don't need an EBO here.
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
+    unsigned int P_EBO[4];
+    for(unsigned int i=0; i<4; ++i)
+        P_EBO[i]=i;
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, m_firstEBO, sizeEBO(), &P_EBO[0]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 //OpenGL draw with given VBO and EBO segments
@@ -137,7 +194,7 @@ void SceneFace::makeEBO(GLint eboId) const
 void SceneFace::draw() const
 {
     glUniform3fv(ms_uniformColorLocation, 1, &m_color[0]);
-    glDrawArrays(GL_TRIANGLE_FAN, m_firstVBOPosition, 4);
+    glDrawElementsBaseVertex(GL_TRIANGLE_FAN, sizeEBO(), GL_UNSIGNED_INT, (GLvoid*)(m_firstEBO), m_baseVertexEBO);
 }
 
 glm::vec3 SceneFace_Prop::colorAmbiant(const SceneFace_Light &light) const

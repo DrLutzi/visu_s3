@@ -54,13 +54,19 @@ float qglviewer_fake::Camera::aspectRatio()
     return 16.0f/9.0f;
 }
 
-#endif
-
-
-SceneCamera::SceneCamera(QGLVIEWER_NAMESPACE::Camera &camera) :
+SceneCamera::SceneCamera(qglviewer_fake::Camera &camera) :
     m_camera        (camera),
     m_renderedImage (NULL)
 {}
+
+#else
+
+SceneCamera::SceneCamera(qglviewer::Camera &camera) :
+    m_camera        (camera),
+    m_renderedImage (NULL)
+{}
+
+#endif
 
 SceneCamera::~SceneCamera()
 {
@@ -110,12 +116,10 @@ Ray SceneCamera::castStochasticRayFromPixel(int x, int y) const
 {
     if(m_renderedImage==NULL)
         ERROR("setupRendering() not called before castStochasticRayFromPixel!");
-    std::random_device rd;
-    std::mt19937 gen(rd());
     std::uniform_real_distribution<float> randomGen(0.0f, 1.0f);
     glm::vec3 R3Pixel = m_topLeftScreen
-            + m_rightVector*(((float)x+randomGen(gen))/m_renderedImage->width())  *   m_screenWidthReal
-            - m_upVector*(((float)y+randomGen(gen))/m_renderedImage->height())    *   m_screenHeightReal;
+            + m_rightVector*(((float)x+randomGen(Random::genMt19937))/m_renderedImage->width())  *   m_screenWidthReal
+            - m_upVector*(((float)y+randomGen(Random::genMt19937))/m_renderedImage->height())    *   m_screenHeightReal;
 
     return Ray(m_position, glm::normalize(R3Pixel - m_position));
 }

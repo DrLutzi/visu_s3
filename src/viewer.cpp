@@ -25,10 +25,7 @@ void Viewer::tp_init()
                                  m_shaderProgram->eboId,
                                  m_shaderProgram->idOfColor);
 
-    SceneFace *face1 = new SceneFace(glm::vec3(0,0,0), glm::vec3(1,0,0), glm::vec3(0,1,0), 10, 6);
-    face1->setColor(glm::vec3(0.5, 0.5, 0.8));
-
-    m_manager->append(face1);
+    m_manager->setup();
     m_manager->remakeScene();
 
 #endif
@@ -98,14 +95,21 @@ void Viewer::keyPressEvent(QKeyEvent *e)
     if(e->key()==Qt::Key_A)
         m_manager->myFirstRendering();
 
+    else if(e->key()==Qt::Key_B)
+        m_manager->phongRendering(12);
+
+    else if(e->key()==Qt::Key_C)
+        m_manager->phongRendering(12, SceneObject::Integral::UNIFORM);
+
+    else if(e->key()==Qt::Key_D)
+        m_manager->phongRendering(12, SceneObject::Integral::UNIFORM_RANDOM);
+
 	QGLViewer::keyPressEvent(e);
 }
 
 void Viewer::mousePressEvent(QMouseEvent *e)
 {
     qglviewer::Vec origin, direction;
-    glm::vec3 hitPoint;
-    float distanceHit;
     camera()->convertClickToLine(e->pos(), origin, direction);
 
     Ray r(vecToGlmVec3(origin), vecToGlmVec3(direction));
@@ -113,10 +117,15 @@ void Viewer::mousePressEvent(QMouseEvent *e)
     for(SceneManager::const_iterator it=m_manager->begin(); it!=m_manager->end(); ++it)
     {
         SceneObject *obj=(*it).second;
-        if(obj!=NULL && obj->intersectsRay(r, hitPoint, distanceHit))
+        SceneObject::RayHitProperties rayHit;
+        if(obj!=NULL)
         {
-            std::cout << "Found intersection! " << glm::to_string(hitPoint) << " at distance " << distanceHit << std::endl;
-            ++intFound;
+            obj->intersectsRay(r, rayHit);
+            if(rayHit.occuredHit)
+            {
+                std::cout << "Found intersection with " << rayHit.objectHit->id() << " at position " << glm::to_string(rayHit.positionHit) << " and at distance " << rayHit.distanceHit << std::endl;
+                ++intFound;
+            }
         }
     }
 

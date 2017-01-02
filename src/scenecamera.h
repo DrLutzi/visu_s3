@@ -10,10 +10,13 @@
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
 #include <random>
+#include "errorsHandler.hpp"
+
+
 
 #ifdef USE_QGLVIEWER
 #include <QGLViewer/qglviewer.h>
-#define QGLVIEWER_NAMESPACE gqlviewer
+
 #else
 
 namespace qglviewer_fake
@@ -44,8 +47,6 @@ private:
     const glm::vec3 m_upVector;
 };
 
-#define QGLVIEWER_NAMESPACE qglviewer_fake
-
 }
 
 #endif
@@ -53,7 +54,12 @@ private:
 class SceneCamera
 {
 public:
-    SceneCamera(QGLVIEWER_NAMESPACE::Camera &camera);
+#ifdef USE_QGLVIEWER
+    SceneCamera(qglviewer::Camera &camera);
+#else
+    SceneCamera(qglviewer_fake::Camera &camera);
+#endif
+
     ~SceneCamera();
 
     void setupRendering();
@@ -83,7 +89,13 @@ public:
 
 private:
 
-    QGLVIEWER_NAMESPACE::Camera   &m_camera;
+#ifdef USE_QGLVIEWER
+    qglviewer::Camera   &m_camera;
+#else
+    qglviewer_fake::Camera   &m_camera;
+#endif
+
+
 
     QImage              *m_renderedImage;
 

@@ -8,7 +8,11 @@
 class SceneManager
 {
 public:
-    SceneManager(QGLVIEWER_NAMESPACE::Camera &camera, GLint vaoId, GLint vboPositionId, GLint eboId, GLuint colorLocation);
+#ifdef USE_QGLVIEWER
+    SceneManager(qglviewer::Camera &camera, GLint vaoId, GLint vboPositionId, GLint eboId, GLuint colorLocation);
+#else
+    SceneManager(qglviewer_fake::Camera &camera, GLint vaoId, GLint vboPositionId, GLint eboId, GLuint colorLocation);
+#endif
 
     typedef std::map<unsigned int, SceneObject*>::iterator iterator;
     typedef std::map<unsigned int, SceneObject*>::const_iterator const_iterator;
@@ -19,6 +23,12 @@ public:
 
     inline iterator end(){return m_objects.end();}
     inline const_iterator end() const{return m_objects.end();}
+
+    ///
+    /// \brief setup
+    /// setup what we want for rendering
+    ///
+    void setup();
 
     ///
     /// \brief attaches an object to the manager.
@@ -76,7 +86,7 @@ public:
     /// \param quality precision of the shadowing
     /// \param N N*N stochastic tracing (use 0 if you don't want to use stochastic ray tracing)
     ///
-    void phongRendering(size_t quality, size_t N=0);
+    void phongRendering(size_t quality, SceneObject::Integral::Type_t typeIntegral=SceneObject::Integral::SINGLE_MEAN);
 
     //Other functions
 
@@ -91,9 +101,9 @@ public:
 private:
 
     //render functions
-    glm::vec3 lightenMaterialProp(SceneFace_Prop *face, const glm::vec3& positionFace, const glm::vec3 &normalFace, const glm::vec3 vToEye, size_t quality);
+    glm::vec3 lightenMaterialProp(SceneFace_Prop *face, const glm::vec3& positionFace, const glm::vec3 &normalFace,
+                                  const glm::vec3 vToEye, size_t quality, SceneObject::Integral::Type_t type=SceneObject::Integral::SINGLE_MEAN);
 
-    SceneFace_Light *m_lightSource;
     std::map<unsigned int, SceneObject*> m_objects;
 
     SceneCamera                     m_camera;
