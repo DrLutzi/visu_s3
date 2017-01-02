@@ -34,6 +34,9 @@ int main(int argc, char *argv[])
     SceneFace_Light *faceLight = new SceneFace_Light(glm::vec3(-5.0f, -1.0f, 5.0f), glm::vec3(-0.1f, 0, -1.0f), glm::vec3(0,1,0), 2, 2);
     faceLight->setColor(glm::vec3(1.0, 1.0, 1.0));
 
+    SceneFace_Light *faceLight2 = new SceneFace_Light(glm::vec3(-5.0f, -1.0f, 5.0f), glm::vec3(-0.1f, 0, -1.0f), glm::vec3(0,1,0), 2, 2);
+    faceLight->setColor(glm::vec3(1.0, 1.0, 1.0));
+
     SceneFace_Prop::MaterialProperties_t matProperties;
     matProperties.fSpecularPower=100.0f;
     matProperties.vAmbiant=glm::vec3(0.1, 0.3, 0.1);

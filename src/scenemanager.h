@@ -27,7 +27,6 @@ public:
     /// It can be efficient to avoid reallocating when several objects are attached to the manager at once.
     ///
     void append(SceneObject* object, bool reallocate=true);
-    void append(SceneFace_Light *object, bool reallocate=true);
 
     ///
     /// \brief removes a object from the manager and returns it (often for deletion).
@@ -74,9 +73,10 @@ public:
     ///
     /// \brief phongRendering
     /// uses phong rendering to render each object, with some faces being light sources.
-    /// \param N precision of the shadowing
+    /// \param quality precision of the shadowing
+    /// \param N N*N stochastic tracing (use 0 if you don't want to use stochastic ray tracing)
     ///
-    void phongRendering(size_t N);
+    void phongRendering(size_t quality, size_t N=0);
 
     //Other functions
 

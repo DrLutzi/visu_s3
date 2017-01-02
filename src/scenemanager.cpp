@@ -46,12 +46,6 @@ void SceneManager::append(SceneObject* object, bool reallocate)
     }
 }
 
-void SceneManager::append(SceneFace_Light *object, bool reallocate)
-{
-    append((SceneObject *)object, reallocate);
-    m_lightSource = object;
-}
-
 SceneObject *SceneManager::remove(unsigned int id)
 {
     iterator position=m_objects.find(id);
@@ -163,7 +157,7 @@ void SceneManager::myFirstRendering()
     m_camera.showBeautifulRender();
 }
 
-void SceneManager::phongRendering(size_t quality)
+void SceneManager::phongRendering(size_t quality, size_t N)
 {
     if(m_lightSource==NULL)
         ERROR("Why would you try a phong rendering without a light source?");
@@ -175,46 +169,55 @@ void SceneManager::phongRendering(size_t quality)
     {
         for(int y=0; y<h; ++y)
         {
-            //cast ray through the pixel, from the position of the eye
-            Ray firstRay=m_camera.castRayFromPixel(x,y);
-            //try to find the closest hit
-            for(iterator it=begin(); it!=end(); ++it)
+            glm::vec3 finalColor(0,0,0);
+            size_t subPixelIterations = N != 0 ? N*N : 1;
+            for(size_t i=0; i<subPixelIterations; ++i)
             {
-                SceneObject::RayHitProperties firstRayHitProperties;
+                Ray firstRay;
+                if(N>0) //cast ray through the middle of the pixel, from the position of the eye
+                    firstRay=m_camera.castRayFromPixel(x,y);
+                else
+                    firstRay=m_camera.castStochasticRayFromPixel(x,y);
+                //try to find the closest hit
                 for(iterator it=begin(); it!=end(); ++it)
                 {
-                    SceneObject *object=(*it).second;
-                    object->intersectsRay(firstRay, firstRayHitProperties);
-                }
-                if(firstRayHitProperties.occuredHit) //we found something?
-                {
-                    glm::vec3 finalColor(0,0,0);
-                    //is it a material prop?
-                    SceneFace_Prop *material=dynamic_cast<SceneFace_Prop*>(firstRayHitProperties.objectHit);
-                    if(material!=NULL)
+                    SceneObject::RayHitProperties firstRayHitProperties;
+                    for(iterator it=begin(); it!=end(); ++it)
                     {
-                        finalColor = lightenMaterialProp(material, firstRayHitProperties.positionHit, firstRayHitProperties.normalHit,
-                                                         glm::normalize(firstRay.origin() - firstRayHitProperties.positionHit), quality);
+                        SceneObject *object=(*it).second;
+                        object->intersectsRay(firstRay, firstRayHitProperties);
                     }
-                    else //is it a light source?
+                    if(firstRayHitProperties.occuredHit) //we found something?
                     {
-                        SceneFace_Light *light=dynamic_cast<SceneFace_Light*>(firstRayHitProperties.objectHit);
-                        if(light!=NULL)
+                        glm::vec3 finalColor_ray(0,0,0);
+                        //is it a material prop?
+                        SceneFace_Prop *material=dynamic_cast<SceneFace_Prop*>(firstRayHitProperties.objectHit);
+                        if(material!=NULL)
                         {
-                            finalColor = light->lightProperties().vAmbiant
-                                    + light->lightProperties().vDiffuse
-                                    + light->lightProperties().vSpecular;
+                            finalColor_ray = lightenMaterialProp(material, firstRayHitProperties.positionHit, firstRayHitProperties.normalHit,
+                                                             glm::normalize(firstRay.origin() - firstRayHitProperties.positionHit), quality);
                         }
+                        else //is it a light source?
+                        {
+                            SceneFace_Light *light=dynamic_cast<SceneFace_Light*>(firstRayHitProperties.objectHit);
+                            if(light!=NULL)
+                            {
+                                finalColor_ray = light->lightProperties().vAmbiant
+                                        + light->lightProperties().vDiffuse
+                                        + light->lightProperties().vSpecular;
+                            }
+                        }
+                        finalColor+=finalColor_ray;
                     }
-                    m_camera.setPixelfv(x, y, &finalColor);
                 }
-                else
-                    m_camera.setPixelf(x, y, 0, 0, 0);
             }
+            finalColor/=N*N;
+            m_camera.setPixelfv(x, y, &finalColor);
         }
     }
     m_camera.showBeautifulRender();
 }
+
 
 SceneObject *SceneManager::operator[](unsigned int i)
 {
